@@ -28,9 +28,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Voeg bij ontbrekende velden een foutmelding toe aan $errors.
     //
     // Bijvoorbeeld:
-    //   if ($email === '') {
-    //       $errors[] = 'E-mailadres is verplicht.';
-    //   }
+    if ($email === '') {
+        $errors[] = 'E-mailadres is verplicht.';
+    }
+    if ($password === '') {
+        $errors[] = 'Wachtwoord is verplicht.';
+    }
     // =============================================================
 
 
@@ -40,17 +43,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Alleen uitvoeren als $errors nog leeg is.
     //
     //  a) Haal de gebruiker op uit de database op basis van e-mail:
-    //       $stmt = $pdo->prepare("");
-    //       $stmt->execute([$?]);
-    //       $user = $stmt->fetch();
-    //
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+    $stmt->execute([$email]);
+    $user = $stmt->fetch();
+
     //  b) Controleer of de gebruiker bestaat EN of het wachtwoord klopt
     //     met password_verify():
-    //       if ($user && password_verify($password, $user['?'])) {
-    //           // login gelukt
-    //       } else {
-    //           $errors[] = 'Ongeldige inloggegevens.';
-    //       }
+    if ($user && password_verify($password, $user['password'])) {
+        // login gelukt
+    } else {
+        $errors[] = 'Ongeldige inloggegevens.';
+    }
     //
     //  TIP: geef GEEN aparte foutmelding voor "gebruiker bestaat niet"
     //  versus "wachtwoord klopt niet" - dat is onveilig.
@@ -61,13 +64,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // TODO 3: SESSIE STARTEN
     // =============================================================
     // Als de login is geslaagd, sla dan het volgende op in de sessie:
-    //   $_SESSION['user_id']    = $user['id'];
-    //   $_SESSION['user_name']  = $user['name'];
-    //   $_SESSION['user_email'] = $user['email'];
-    //
-    // Stuur vervolgens door naar het dashboard:
-    //   header('Location: index.php');
-    //   exit;
+    if (empty($errors)) {
+        $_SESSION['user_id']    = $user['id'];
+        $_SESSION['user_name']  = $user['name'];
+        $_SESSION['user_email'] = $user['email'];
+        //
+        // Stuur vervolgens door naar het dashboard:
+        header('Location: index.php');
+        exit;
+    }
     // =============================================================
 
 }
@@ -94,7 +99,7 @@ include __DIR__ . '/includes/header.php';
                 <div class="form-group">
                     <label class="form-label" for="email">E-mailadres</label>
                     <input type="email" id="email" name="email" class="form-input"
-                           value="<?= htmlspecialchars($email) ?>" required>
+                        value="<?= htmlspecialchars($email) ?>" required>
                 </div>
 
                 <div class="form-group">

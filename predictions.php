@@ -22,7 +22,13 @@ $success = '';
 // lege array zijn zodat de pagina geen fatal error geeft.
 // =============================================================
 
-$matches = []; // <-- studenten vullen deze vanuit de query
+try {
+    $stmt = $pdo->query("SELECT * FROM matches ORDER BY match_date ASC");
+    $matches = $stmt->fetchAll();
+} catch (PDOException $e) {
+    $matches = []; // Pagina crasht niet als de tabel nog leeg is
+}
+
 
 
 // =============================================================
@@ -39,8 +45,14 @@ $matches = []; // <-- studenten vullen deze vanuit de query
 //       $predictions[$row['match_id']] = $row;
 //   }
 // =============================================================
+$predictions = [];
+$stmt = $pdo->prepare("SELECT * FROM predictions WHERE user_id = ?");
+$stmt->execute([$user['id']]);
 
-$predictions = []; // <-- studenten vullen deze
+foreach ($stmt->fetchAll() as $row) {
+$predictions[$row['match_id']] = $row;
+}
+
 
 
 // =============================================================
@@ -58,33 +70,40 @@ $predictions = []; // <-- studenten vullen deze
 //    wedstrijd geen voorspelling ingevuld).
 //
 // Voorbeeld:
-//   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-//       $sql = "INSERT INTO predictions (user_id, match_id, predicted_home, predicted_away)
-//               VALUES (?, ?, ?, ?)
-//               ON DUPLICATE KEY UPDATE
-//                 predicted_home = VALUES(predicted_home),
-//                 predicted_away = VALUES(predicted_away)";
-//       $stmt = $pdo->prepare($sql);
-//
-//       foreach ($_POST['predictions'] ?? [] as $match_id => $scores) {
-//           $home = $scores['home'] ?? '';
-//           $away = $scores['away'] ?? '';
-//
-//           if ($home === '' || $away === '') {
-//               continue; // niet ingevuld → overslaan
-//           }
-//           if (!ctype_digit((string)$home) || !ctype_digit((string)$away)) {
-//               continue; // ongeldige invoer → overslaan
-//           }
-//
-//           $stmt->execute([
-//               $user['id'], (int)$match_id, (int)$home, (int)$away
-//           ]);
-//       }
-//
-//       $success = 'Je voorspellingen zijn opgeslagen!';
-//       // Refresh de predictions array met de nieuwe data
-//   }
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $sql = "INSERT INTO predictions (user_id, match_id, predicted_home, predicted_away)
+              VALUES (?, ?, ?, ?)
+              ON DUPLICATE KEY UPDATE
+                predicted_home = VALUES(predicted_home),
+                predicted_away = VALUES(predicted_away)";
+      $stmt = $pdo->prepare($sql);
+
+      foreach ($_POST['predictions'] ?? [] as $match_id => $scores) {
+          $home = $scores['home'] ?? '';
+          $away = $scores['away'] ?? '';
+
+          if ($home === '' || $away === '') {
+              continue; // niet ingevuld → overslaan
+          }
+          if (!ctype_digit((string)$home) || !ctype_digit((string)$away)) {
+              continue; // ongeldige invoer → overslaan
+          }
+
+          $stmt->execute([
+              $user['id'], (int)$match_id, (int)$home, (int)$away
+          ]);
+      }
+
+      $success = 'Je voorspellingen zijn opgeslagen!';
+
+$predictions = [];
+$stmt = $pdo->prepare("SELECT * FROM predictions WHERE user_id = ?");
+$stmt->execute([$user['id']]);
+
+foreach ($stmt->fetchAll() as $row) {
+$predictions[$row['match_id']] = $row;
+}
+  }
 // =============================================================
 
 
@@ -169,6 +188,6 @@ include __DIR__ . '/includes/header.php';
             </div>
         </form>
     <?php endif; ?>
-</div>
+</div>  
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

@@ -18,6 +18,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password']      ?? '';
     $confirm  = $_POST['password_confirm'] ?? '';
 
+if ($name === '') {
+    $errors[] = 'Naam is verplicht.';
+} elseif (strlen($name) < 2) {
+    $errors[] = 'Naam moet minimaal 2 tekens lang zijn.';
+}
+
+if ($email === '') {
+    $errors[] = 'E-mailadres is verplicht.';
+} elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    $errors[] = 'Ongeldig e-mailadres.';
+}
+
+if ($password === '') {
+    $errors[] = 'Wachtwoord is verplicht.';
+} elseif (strlen($password) < 6) {
+    $errors[] = 'Wachtwoord moet minimaal 6 tekens lang zijn.';
+}
+
+if ($confirm === '') {
+    $errors[] = 'Bevestig je wachtwoord.';
+} elseif ($password !== $confirm) {
+    $errors[] = 'Wachtwoorden komen niet overeen.';
+}
     // =============================================================
     // TODO 1: VALIDATIE
     // =============================================================
@@ -45,9 +68,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // aan de $errors array.
     //
     // Voorbeeld prepared statement:
-    //   $stmt = $pdo->prepare("?");
-    //   $stmt->execute([$?]);
-    //   if ($stmt->fetch()) { ... }
+    
+    $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+    $stmt->execute([$email]);
+    if ($stmt->fetch()){
+        $errors[] = "Dit e-mailadres is al geregistreerd.";
+    }
+        
+    if (empty($errors)) {     
+        $hashed = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $pdo->prepare("
+        INSERT INTO users (name, email, password)
+            VALUES (?, ?, ?)
+        ");
+
+        $stmt->execute([$name,$email,$hashed]);
+
+        header('Location: login.php?registered=1');
+        exit;
+    }
     // =============================================================
 
 
