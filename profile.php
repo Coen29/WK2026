@@ -5,6 +5,23 @@ require_once __DIR__ . '/includes/db.php';
 requireLogin();
 $user = currentUser();
 
+$stats = [
+    'pools'       => 0,
+    'predictions' => 0,
+];
+
+try {
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM pool_members WHERE user_id = ?");
+    $stmt->execute([$user['id']]);
+    $stats['pools'] = (int)$stmt->fetchColumn();
+
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM predictions WHERE user_id = ?");
+    $stmt->execute([$user['id']]);
+    $stats['predictions'] = (int)$stmt->fetchColumn();
+} catch (PDOException $e) {
+    // Stil: stats blijven 0 als tabel nog leeg is
+
+}
 $errors  = [];
 $success = '';
 $name    = $user['name'];
@@ -34,12 +51,18 @@ include __DIR__ . '/includes/header.php';
 ?>
 
 <div class="container">
-    <div class="form-wrapper">
-        <div class="form-card">
-            <h1 class="form-title">Profiel</h1>
-            <p class="form-subtitle">Pas je naam aan zodat vrienden je herkennen in de poule.</p>
+    <div class="page-header">
+        <div>
+            <div class="page-eyebrow">Account</div>
+            <h1 class="page-title">Mijn profiel</h1>
+            <p class="page-desc">Bekijk je accountgegevens en statistieken.</p>
+        </div>
+    </div>
 
-            <?php if ($success): ?>
+    <section class="card" style="margin-bottom: 32px;">
+        <div class="card-header">
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <?php if ($success): ?>
                 <div class="alert alert-success">✓ <?= htmlspecialchars($success) ?></div>
             <?php endif; ?>
 
@@ -61,6 +84,28 @@ include __DIR__ . '/includes/header.php';
                     Naam opslaan
                 </button>
             </form>
+            </div>
+        </div>
+        <dl style="display: grid; gap: 16px; margin: 0;">
+            <div>
+                <dt style="font-family: var(--font-mono); font-size: 11px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px;">Naam</dt>
+                <dd style="font-size: 16px; color: var(--chalk); margin: 0;"><?= htmlspecialchars($user['name']) ?></dd>
+            </div>
+            <div>
+                <dt style="font-family: var(--font-mono); font-size: 11px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px;">E-mailadres</dt>
+                <dd style="font-size: 16px; color: var(--chalk); margin: 0;"><?= htmlspecialchars($user['email']) ?></dd>
+            </div>
+        </dl>
+    </section>
+
+    <div class="stat-row">
+        <div class="stat stat-accent">
+            <div class="stat-label">Poules</div>
+            <div class="stat-value"><?= $stats['pools'] ?></div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Voorspellingen</div>
+            <div class="stat-value"><?= $stats['predictions'] ?></div>
         </div>
     </div>
 </div>
