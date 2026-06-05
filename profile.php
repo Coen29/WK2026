@@ -20,6 +20,8 @@ try {
     $stats['predictions'] = (int)$stmt->fetchColumn();
 } catch (PDOException $e) {
     // Stil: stats blijven 0 als tabel nog leeg is
+
+}
 $errors  = [];
 $success = '';
 $name    = $user['name'];
@@ -82,10 +84,6 @@ include __DIR__ . '/includes/header.php';
                     Naam opslaan
                 </button>
             </form>
-                <div>
-                    <h2 class="card-title"><?= htmlspecialchars($user['name']) ?></h2>
-                    <p class="card-subtitle"><?= htmlspecialchars($user['email']) ?></p>
-                </div>
             </div>
         </div>
         <dl style="display: grid; gap: 16px; margin: 0;">
