@@ -15,6 +15,8 @@ if ($pool_id <= 0) {
 // Haal de poule op + check of gebruiker lid is
 $pool = null;
 $members = [];
+$data = [];
+$matchList = [];
 
 try {
     // Poule + check of user lid is
@@ -47,6 +49,7 @@ try {
     // Voorspellingen van alle leden per wedstrijd ($data[match_id][user_id])
     $data = [];
     $poolMatches = [];
+    // Voorspellingen van alle leden per wedstrijd
     $stmt = $pdo->prepare("
         SELECT
             m.id AS match_id,
@@ -181,6 +184,15 @@ include __DIR__ . '/includes/header.php';
             <div class="match-list">
                 <?php foreach ($poolMatches as $match):
                     $matchId = (int)$match['id'];
+        <?php if (empty($matchList)): ?>
+            <div class="empty" style="padding: 40px 24px;">
+                <div class="empty-icon">📅</div>
+                <h3 class="empty-title">Nog geen wedstrijden</h3>
+                <p class="empty-text">Zodra wedstrijden zijn ingepland, zie je hier de voorspellingen van alle leden.</p>
+            </div>
+        <?php else: ?>
+            <div class="match-list">
+                <?php foreach ($matchList as $matchId => $match):
                     $date = new DateTime($match['match_date']);
                 ?>
                     <div class="match">
@@ -208,19 +220,17 @@ include __DIR__ . '/includes/header.php';
                                     && $pred['predicted_away'] !== null;
                             ?>
                                 <div class="member">
-                                    <div class="member-avatar">
-                                        <?= strtoupper(substr(htmlspecialchars($member['name']), 0, 1)) ?>
-                                    </div>
                                     <div class="member-info">
                                         <div class="member-name"><?= htmlspecialchars($member['name']) ?></div>
                                     </div>
-                                    <span class="member-prediction">
+                                    <div style="font-family: var(--font-display); font-size: 18px; color: var(--field);">
                                         <?php if ($hasPrediction): ?>
                                             <?= (int)$pred['predicted_home'] ?> – <?= (int)$pred['predicted_away'] ?>
                                         <?php else: ?>
                                             —
                                         <?php endif; ?>
                                     </span>
+                                    </div>
                                 </div>
                             <?php endforeach; ?>
                         </div>
