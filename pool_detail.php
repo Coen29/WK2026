@@ -46,6 +46,9 @@ try {
     $stmt->execute([$pool_id]);
     $members = $stmt->fetchAll();
 
+    // Voorspellingen van alle leden per wedstrijd ($data[match_id][user_id])
+    $data = [];
+    $poolMatches = [];
     // Voorspellingen van alle leden per wedstrijd
     $stmt = $pdo->prepare("
         SELECT
@@ -56,16 +59,15 @@ try {
             m.stage,
             u.id AS user_id,
             u.name AS user_name,
-            p.predicted_home,
-            p.predicted_away
+            pr.predicted_home,
+            pr.predicted_away
         FROM matches m
         INNER JOIN pool_members pm ON pm.pool_id = ?
         INNER JOIN users u ON u.id = pm.user_id
-        LEFT JOIN predictions p ON p.match_id = m.id AND p.user_id = u.id
+        LEFT JOIN predictions pr ON pr.match_id = m.id AND pr.user_id = u.id
         ORDER BY m.match_date ASC, pm.joined_at ASC
     ");
     $stmt->execute([$pool_id]);
-
     foreach ($stmt->fetchAll() as $row) {
         $matchId = (int)$row['match_id'];
         $userId = (int)$row['user_id'];
@@ -172,6 +174,16 @@ include __DIR__ . '/includes/header.php';
             </div>
         </div>
 
+        <?php if (empty($poolMatches)): ?>
+            <div class="empty">
+                <div class="empty-icon">📅</div>
+                <h2 class="empty-title">Nog geen wedstrijden</h2>
+                <p class="empty-text">Zodra er wedstrijden zijn, zie je hier de voorspellingen van alle leden.</p>
+            </div>
+        <?php else: ?>
+            <div class="match-list">
+                <?php foreach ($poolMatches as $match):
+                    $matchId = (int)$match['id'];
         <?php if (empty($matchList)): ?>
             <div class="empty" style="padding: 40px 24px;">
                 <div class="empty-icon">📅</div>

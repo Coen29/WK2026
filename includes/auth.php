@@ -37,3 +37,21 @@ function currentUser(): ?array {
         'email' => $_SESSION['user_email'] ?? '',
     ];
 }
+
+/**
+ * Controleer of de ingelogde gebruiker beheerder is (user_id === 1).
+ */
+function isAdmin(): bool {
+    return isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] === 1;
+}
+
+/**
+ * Alleen toegankelijk voor beheerders; anders doorsturen naar dashboard.
+ */
+function requireAdmin(): void {
+    requireLogin();
+    if (!isAdmin()) {
+        header('Location: index.php');
+        exit;
+    }
+}
