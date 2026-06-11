@@ -70,8 +70,9 @@ try {
         $matchId = (int)$row['match_id'];
         $userId = (int)$row['user_id'];
 
-        if (!isset($matchList[$matchId])) {
-            $matchList[$matchId] = [
+        if (!isset($poolMatches[$matchId])) {
+            $poolMatches[$matchId] = [
+                'id' => $matchId,
                 'home_team' => $row['home_team'],
                 'away_team' => $row['away_team'],
                 'match_date' => $row['match_date'],
@@ -216,6 +217,7 @@ include __DIR__ . '/includes/header.php';
                                         <?php else: ?>
                                             —
                                         <?php endif; ?>
+                                    </span>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
