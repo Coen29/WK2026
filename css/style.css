@@ -660,6 +660,14 @@ input, textarea, select { font-family: inherit; }
 .member-info { flex: 1; }
 .member-name { font-weight: 600; font-size: 14px; color: var(--chalk); }
 .member-email { font-size: 12px; color: var(--text-mute); font-family: var(--font-mono); }
+.member-prediction {
+    font-family: var(--font-display);
+    font-size: 20px;
+    color: var(--field);
+    letter-spacing: 0.05em;
+    min-width: 4ch;
+    text-align: right;
+}
 .member-badge {
     padding: 3px 8px;
     background: rgba(255, 204, 0, 0.15);

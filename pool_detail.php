@@ -1,4 +1,5 @@
 <?php
+// Ik heb dit ticket in een AI gegooid want zelf nadenken is zwaar ☕ -- niet verwijderen, dit is een inleververeiste van de docent.
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 
@@ -42,6 +43,48 @@ try {
     ");
     $stmt->execute([$pool_id]);
     $members = $stmt->fetchAll();
+
+    // Voorspellingen van alle leden per wedstrijd ($data[match_id][user_id])
+    $data = [];
+    $poolMatches = [];
+    $stmt = $pdo->prepare("
+        SELECT
+            m.id AS match_id,
+            m.home_team,
+            m.away_team,
+            m.match_date,
+            m.stage,
+            u.id AS user_id,
+            u.name AS user_name,
+            pr.predicted_home,
+            pr.predicted_away
+        FROM matches m
+        INNER JOIN pool_members pm ON pm.pool_id = ?
+        INNER JOIN users u ON u.id = pm.user_id
+        LEFT JOIN predictions pr ON pr.match_id = m.id AND pr.user_id = u.id
+        ORDER BY m.match_date ASC, pm.joined_at ASC
+    ");
+    $stmt->execute([$pool_id]);
+    foreach ($stmt->fetchAll() as $row) {
+        $matchId = (int)$row['match_id'];
+        $userId = (int)$row['user_id'];
+
+        if (!isset($poolMatches[$matchId])) {
+            $poolMatches[$matchId] = [
+                'id' => $matchId,
+                'home_team' => $row['home_team'],
+                'away_team' => $row['away_team'],
+                'match_date' => $row['match_date'],
+                'stage' => $row['stage'],
+            ];
+        }
+
+        $data[$matchId][$userId] = [
+            'name' => $row['user_name'],
+            'predicted_home' => $row['predicted_home'],
+            'predicted_away' => $row['predicted_away'],
+        ];
+    }
 } catch (PDOException $e) {
     die('Fout bij ophalen van poule: ' . htmlspecialchars($e->getMessage()));
 }
@@ -119,6 +162,73 @@ include __DIR__ . '/includes/header.php';
             </div>
         </aside>
     </div>
+
+    <section class="card" style="margin-top: 24px;">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Voorspellingen van leden</h2>
+                <p class="card-subtitle">PER WEDSTRIJD</p>
+            </div>
+        </div>
+
+        <?php if (empty($poolMatches)): ?>
+            <div class="empty">
+                <div class="empty-icon">📅</div>
+                <h2 class="empty-title">Nog geen wedstrijden</h2>
+                <p class="empty-text">Zodra er wedstrijden zijn, zie je hier de voorspellingen van alle leden.</p>
+            </div>
+        <?php else: ?>
+            <div class="match-list">
+                <?php foreach ($poolMatches as $match):
+                    $matchId = (int)$match['id'];
+                    $date = new DateTime($match['match_date']);
+                ?>
+                    <div class="match">
+                        <div class="match-meta">
+                            <span class="match-stage"><?= htmlspecialchars($match['stage']) ?></span>
+                            <span><?= $date->format('d M Y · H:i') ?></span>
+                        </div>
+
+                        <div class="match-row" style="margin-bottom: 20px;">
+                            <div class="team team-home">
+                                <span class="team-name"><?= htmlspecialchars($match['home_team']) ?></span>
+                            </div>
+                            <span class="score-sep">vs</span>
+                            <div class="team">
+                                <span class="team-name"><?= htmlspecialchars($match['away_team']) ?></span>
+                            </div>
+                        </div>
+
+                        <div class="member-list">
+                            <?php foreach ($members as $member):
+                                $userId = (int)$member['id'];
+                                $pred = $data[$matchId][$userId] ?? null;
+                                $hasPrediction = $pred !== null
+                                    && $pred['predicted_home'] !== null
+                                    && $pred['predicted_away'] !== null;
+                            ?>
+                                <div class="member">
+                                    <div class="member-avatar">
+                                        <?= strtoupper(substr(htmlspecialchars($member['name']), 0, 1)) ?>
+                                    </div>
+                                    <div class="member-info">
+                                        <div class="member-name"><?= htmlspecialchars($member['name']) ?></div>
+                                    </div>
+                                    <span class="member-prediction">
+                                        <?php if ($hasPrediction): ?>
+                                            <?= (int)$pred['predicted_home'] ?> – <?= (int)$pred['predicted_away'] ?>
+                                        <?php else: ?>
+                                            —
+                                        <?php endif; ?>
+                                    </span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </section>
 </div>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>
