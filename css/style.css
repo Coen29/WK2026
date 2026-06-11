@@ -706,6 +706,30 @@ input, textarea, select { font-family: inherit; }
     color: var(--text-mute);
 }
 .match-stage { color: var(--field); }
+.match-meta-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.match-played-badge {
+    padding: 3px 8px;
+    background: rgba(46, 204, 113, 0.15);
+    border: 1px solid rgba(46, 204, 113, 0.35);
+    border-radius: 4px;
+    color: #2ecc71;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+.admin-score-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border);
+}
 
 .match-row {
     display: grid;
