@@ -15,6 +15,8 @@ if ($pool_id <= 0) {
 // Haal de poule op + check of gebruiker lid is
 $pool = null;
 $members = [];
+$data = [];
+$matchList = [];
 
 try {
     // Poule + check of user lid is
@@ -44,9 +46,7 @@ try {
     $stmt->execute([$pool_id]);
     $members = $stmt->fetchAll();
 
-    // Voorspellingen van alle leden per wedstrijd ($data[match_id][user_id])
-    $data = [];
-    $poolMatches = [];
+    // Voorspellingen van alle leden per wedstrijd
     $stmt = $pdo->prepare("
         SELECT
             m.id AS match_id,
@@ -56,15 +56,16 @@ try {
             m.stage,
             u.id AS user_id,
             u.name AS user_name,
-            pr.predicted_home,
-            pr.predicted_away
+            p.predicted_home,
+            p.predicted_away
         FROM matches m
         INNER JOIN pool_members pm ON pm.pool_id = ?
         INNER JOIN users u ON u.id = pm.user_id
-        LEFT JOIN predictions pr ON pr.match_id = m.id AND pr.user_id = u.id
+        LEFT JOIN predictions p ON p.match_id = m.id AND p.user_id = u.id
         ORDER BY m.match_date ASC, pm.joined_at ASC
     ");
     $stmt->execute([$pool_id]);
+
     foreach ($stmt->fetchAll() as $row) {
         $matchId = (int)$row['match_id'];
         $userId = (int)$row['user_id'];
@@ -171,16 +172,15 @@ include __DIR__ . '/includes/header.php';
             </div>
         </div>
 
-        <?php if (empty($poolMatches)): ?>
-            <div class="empty">
+        <?php if (empty($matchList)): ?>
+            <div class="empty" style="padding: 40px 24px;">
                 <div class="empty-icon">📅</div>
-                <h2 class="empty-title">Nog geen wedstrijden</h2>
-                <p class="empty-text">Zodra er wedstrijden zijn, zie je hier de voorspellingen van alle leden.</p>
+                <h3 class="empty-title">Nog geen wedstrijden</h3>
+                <p class="empty-text">Zodra wedstrijden zijn ingepland, zie je hier de voorspellingen van alle leden.</p>
             </div>
         <?php else: ?>
             <div class="match-list">
-                <?php foreach ($poolMatches as $match):
-                    $matchId = (int)$match['id'];
+                <?php foreach ($matchList as $matchId => $match):
                     $date = new DateTime($match['match_date']);
                 ?>
                     <div class="match">
@@ -208,19 +208,17 @@ include __DIR__ . '/includes/header.php';
                                     && $pred['predicted_away'] !== null;
                             ?>
                                 <div class="member">
-                                    <div class="member-avatar">
-                                        <?= strtoupper(substr(htmlspecialchars($member['name']), 0, 1)) ?>
-                                    </div>
                                     <div class="member-info">
                                         <div class="member-name"><?= htmlspecialchars($member['name']) ?></div>
                                     </div>
-                                    <span class="member-prediction">
+                                    <div style="font-family: var(--font-display); font-size: 18px; color: var(--field);">
                                         <?php if ($hasPrediction): ?>
                                             <?= (int)$pred['predicted_home'] ?> – <?= (int)$pred['predicted_away'] ?>
                                         <?php else: ?>
                                             —
                                         <?php endif; ?>
                                     </span>
+                                    </div>
                                 </div>
                             <?php endforeach; ?>
                         </div>
